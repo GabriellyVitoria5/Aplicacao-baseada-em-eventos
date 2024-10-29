@@ -1,30 +1,29 @@
 import turtle
 import time
-import random
 
 delay = 0.01
 
-# Score
-score = 0
-high_score = 0
-
-# Set up the screen
+# configurar a tela
 wn = turtle.Screen()
 wn.title("Move Game by @Garrocho")
 wn.bgcolor("green")
 wn.setup(width=1.0, height=1.0, startx=None, starty=None)
-wn.tracer(0) # Turns off the screen updates
+wn.tracer(0)  # Turns off the screen updates
 
-# gamer 1
+# guardar altura e largura da tela
+screen_width = wn.window_width() // 2  # metade da largura
+screen_height = wn.window_height() // 2  # detade da altura
+
+# jogador 1
 head = turtle.Turtle()
 head.speed(0)
 head.shape("circle")
 head.color("red")
 head.penup()
-head.goto(0,0)
+head.goto(0, 0)
 head.direction = "stop"
 
-# Functions
+# funções de direção
 def go_up():
     head.direction = "up"
 
@@ -41,23 +40,33 @@ def close():
     wn.bye()
 
 def move():
+    x = head.xcor()
+    y = head.ycor()
+
     if head.direction == "up":
-        y = head.ycor()
         head.sety(y + 2)
 
     if head.direction == "down":
-        y = head.ycor()
         head.sety(y - 2)
 
     if head.direction == "left":
-        x = head.xcor()
         head.setx(x - 2)
 
     if head.direction == "right":
-        x = head.xcor()
         head.setx(x + 2)
 
-# Keyboard bindings
+    # ir para o lado oposto ao chegar no limite da tela
+    if x > screen_width:
+        head.setx(-screen_width)
+    elif x < -screen_width:
+        head.setx(screen_width)
+
+    if y > screen_height:
+        head.sety(-screen_height)
+    elif y < -screen_height:
+        head.sety(screen_height)
+
+# configurando teclas de movimento
 wn.listen()
 wn.onkeypress(go_up, "w")
 wn.onkeypress(go_down, "s")
@@ -65,11 +74,8 @@ wn.onkeypress(go_left, "a")
 wn.onkeypress(go_right, "d")
 wn.onkeypress(close, "Escape")
 
-# Main game loop
+# loop do jogo
 while True:
     wn.update()
     move()
     time.sleep(delay)
-
-
-wn.mainloop()
