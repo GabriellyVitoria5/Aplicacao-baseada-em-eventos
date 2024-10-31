@@ -4,25 +4,27 @@ import paho.mqtt.client as paho
 import time
 import random
 
-broker="localhost" # hostname
-port=1883
+broker = "localhost" # hostname
+port = 1883
 
 def on_publish(client, userdata, result):
-    print("Dispositivo 1: Dados Publicados.")
+    print("Dados Publicados.")
     pass
-    
-client = paho.Client("admin")
+
+# cada publicador ttem um id para ser identificado
+client_id = "pub_" + str(random.randint(1, 1000))    
+client = paho.Client(client_id)
 client.on_publish = on_publish
 client.connect(broker,port)
 
-for i in range(20):
-    d=random.randint(1,5)
+for i in range(5):
+    d = random.randint(1,3)
     
     # criando mensagem
-    message="Dispositivo 1 : Dados " + str(i)
+    message = f"Dispositivo {client_id} : Dados {d}"
     time.sleep(d)
     
     # publicando mensagem
-    ret= client.publish("/data",message)
+    ret= client.publish("/data", message)
 
 print("Parou...")
