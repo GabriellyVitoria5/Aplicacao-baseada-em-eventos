@@ -4,7 +4,7 @@
 import paho.mqtt.client as mqtt
 import threading
 import time
-import random
+import json
 import turtle
 
 broker = "localhost" # hostname
@@ -32,7 +32,7 @@ player_ball.speed(0)
 player_ball.shape("circle")
 player_ball.color("red")
 player_ball.penup()
-player_ball.goto(random.randint(-screen_width, screen_width), random.randint(-screen_height, screen_height))
+player_ball.goto(0, 0)
 player_ball.direction = "stop"
 
 # funções de direção e movimentação
@@ -93,14 +93,20 @@ def on_publish(client, userdata, result):
 # jogadores enviam seus movimentos uns para os outros
 def send_movements():
     while True:
-        movement_message = f"{player_name}:{player_ball.direction}:{player_ball.xcor()}:{player_ball.ycor()}"
+        movement_data = {
+            "name": player_name,
+            "direction": player_ball.direction,
+            "x": player_ball.xcor(),
+            "y": player_ball.ycor()
+        }
+        movement_message = json.dumps(movement_data)  # Serializa o dicionário para JSON
         player_pub.publish("/game", movement_message)
-        time.sleep(0.1)  
+        time.sleep(0.1) 
 
 # cliente MQTT para publicar os movimentos
 player_pub = mqtt.Client(player_name)
 player_pub.on_publish = on_publish
-player_pub.connect(broker,port)
+player_pub.connect(broker, port)
 
 # thread separada para enviar movimentos
 movements_thread = threading.Thread(target=send_movements)
@@ -122,11 +128,12 @@ def on_message(client, userdata, msg):
 
 # processar mensagens recebidas por outros jogadores
 def process_message(message):
-    print(f"Movimento: {message}")
+    movement_data = json.loads(message)  # Desserializa a mensagem de volta para um dicionário
+    print(f"Movimento de {movement_data['name']}: {movement_data['direction']}, (x: {movement_data['x']}, y: {movement_data['y']})")
 
 # cliente MQTT para assinar (receber) movimentos
 player_sub = mqtt.Client()
-player_sub.connect(broker,port,timelive)
+player_sub.connect(broker, port, timelive)
 player_sub.on_connect = on_connect
 player_sub.on_message = on_message
 
