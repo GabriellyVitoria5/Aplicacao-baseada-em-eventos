@@ -1,6 +1,5 @@
 import paho.mqtt.client as mqtt
 import threading
-import time
 
 broker = "localhost" # hostname
 port = 1883

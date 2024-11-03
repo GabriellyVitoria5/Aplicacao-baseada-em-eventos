@@ -11,7 +11,7 @@ def on_publish(client, userdata, result):
     print("Dados Publicados.")
     pass
 
-# cada publicador ttem um id para ser identificado
+# cada publicador tem um id para ser identificado
 client_id = "pub_" + str(random.randint(1, 1000))    
 client = paho.Client(client_id)
 client.on_publish = on_publish
@@ -25,6 +25,6 @@ for i in range(5):
     time.sleep(d)
     
     # publicando mensagem
-    ret= client.publish("/data", message)
+    ret = client.publish("/data", message)
 
 print("Parou...")
