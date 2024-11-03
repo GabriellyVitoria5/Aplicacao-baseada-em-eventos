@@ -5,28 +5,97 @@ import paho.mqtt.client as mqtt
 import threading
 import time
 import random
+import turtle
 
 broker = "localhost" # hostname
 port = 1883
 timelive = 60
+delay_frames = 0.01
 
-# --- Parte de pub (enviar movimentos) ---
+# --- Parte gráfica (tela do jogo) ---
+
+# configurar a tela do jogo
+wn = turtle.Screen()
+wn.title("Move Game")
+wn.bgcolor("green")
+wn.setup(width=800, height=600)
+wn.tracer(0)  # Desativa as atualizações automáticas da tela
+
+# guardar altura e largura da tela
+screen_width = wn.window_width() // 2  
+screen_height = wn.window_height() // 2 
+
+# jogador 1 (cada jogador terá sua própria bolinha por enquanto)
+player_name = input("Informe seu nome: ")
+player_ball = turtle.Turtle()
+player_ball.speed(0)
+player_ball.shape("circle")
+player_ball.color("red")
+player_ball.penup()
+player_ball.goto(random.randint(-screen_width, screen_width), random.randint(-screen_height, screen_height))
+player_ball.direction = "stop"
+
+# funções de direção e movimentação
+def go_up():
+    player_ball.direction = "up"
+
+def go_down():
+    player_ball.direction = "down"
+
+def go_left():
+    player_ball.direction = "left"
+
+def go_right():
+    player_ball.direction = "right"
+
+def close():
+    wn.bye()
+
+def move():
+    x = player_ball.xcor()
+    y = player_ball.ycor()
+
+    if player_ball.direction == "up":
+        player_ball.sety(y + 2)
+    if player_ball.direction == "down":
+        player_ball.sety(y - 2)
+    if player_ball.direction == "left":
+        player_ball.setx(x - 2)
+    if player_ball.direction == "right":
+        player_ball.setx(x + 2)
+
+    # Ir para o lado oposto ao chegar no limite da tela
+    if x > screen_width:
+        player_ball.setx(-screen_width)
+    elif x < -screen_width:
+        player_ball.setx(screen_width)
+
+    if y > screen_height:
+        player_ball.sety(-screen_height)
+    elif y < -screen_height:
+        player_ball.sety(screen_height)
+
+# configurando teclas de movimento
+wn.listen()
+wn.onkeypress(go_up, "w")
+wn.onkeypress(go_down, "s")
+wn.onkeypress(go_left, "a")
+wn.onkeypress(go_right, "d")
+wn.onkeypress(close, "Escape")
+
+# --- Parte MQTT (publicação e assinatura de movimentos) ---
+
+# --- Métodos de pub (enviar movimentos) ---
 
 def on_publish(client, userdata, result):
-    print("Dados Publicados.")
     pass
-
-# cada jogador é identificado pelo seu nome
-player_name = input("Informe seu nome: ") 
 
 # jogadores enviam seus movimentos uns para os outros
 def send_movements():
     while True:
-        movement = random.randint(1,10)
-        d = random.randint(1,3)
-        time.sleep(d)
-        message = f"{player_name}: {movement}" 
-        ret = player_pub.publish("/game", message)
+        movement_message = f"{player_name}:{player_ball.direction}:{player_ball.xcor()}:{player_ball.ycor()}"
+        player_pub.publish("/game", movement_message)
+        time.sleep(0.1)  
 
 # cliente MQTT para publicar os movimentos
 player_pub = mqtt.Client(player_name)
@@ -38,7 +107,7 @@ movements_thread = threading.Thread(target=send_movements)
 movements_thread.start()
 
 
-# --- Parte de sub (receber movimentos) --- 
+# --- Métodos de sub (receber movimentos) --- 
 
 # função chamada ao conectar com o servidor mqtt
 def on_connect(client, userdata, flags, rc):
@@ -61,8 +130,11 @@ player_sub.connect(broker,port,timelive)
 player_sub.on_connect = on_connect
 player_sub.on_message = on_message
 
-# loop para manter o jogador assinado e recebendo mensagens
+# loop mqtt para receber movimentos dos jogadores
 player_sub.loop_start() 
 
-# manter o programa rodando para o envio de mensagens
-movements_thread.join()
+# loop principal com a tela do jogo
+while True:
+    wn.update()  
+    move()  
+    time.sleep(delay_frames)
