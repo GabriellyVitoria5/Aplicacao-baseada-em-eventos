@@ -23,14 +23,14 @@ wn.bgcolor("green")
 wn.setup(width=800, height=600)
 wn.tracer(0)  # Desativa as atualizações automáticas da tela
 
-# guardar altura e largura da tela
+# guardar altura e largura da tela para criar lógica da bolinha voltar pelo outro lado ao atingir a borda
 screen_width = wn.window_width() // 2  
 screen_height = wn.window_height() // 2 
 
 # armazenar jogadores online
 players = {}
 
-# jogador 1 (cada jogador terá sua própria bolinha sozinha por enquanto)
+# jogador atual
 player_name = input("Informe seu nome: ")
 player_ball = turtle.Turtle()
 player_ball.speed(0)
@@ -71,7 +71,7 @@ def move():
     if player_ball.direction == "right":
         player_ball.setx(x + 2)
 
-    # Ir para o lado oposto ao chegar no limite da tela
+    # ir para o lado oposto ao chegar no limite da tela
     if x > screen_width:
         player_ball.setx(-screen_width)
     elif x < -screen_width:
@@ -91,7 +91,9 @@ wn.onkeypress(go_right, "d")
 wn.onkeypress(close, "Escape")
 wn.getcanvas().winfo_toplevel().protocol("WM_DELETE_WINDOW", close) # fechar janela clicando no X
 
+
 # --- Parte MQTT (publicação e assinatura de movimentos) ---
+
 
 # --- Métodos de pub (enviar movimentos) ---
 
@@ -134,9 +136,13 @@ def on_message(client, userdata, msg):
     message = msg.payload.decode()
     process_message(message)
 
+# armazenar movimentos recebidos de outros jogadores
+movements_received = []
+
 # processar mensagens recebidas por outros jogadores
 def process_message(message):
-    movement_data = json.loads(message)  # Desserializa a mensagem de volta para um dicionário
+    movement_data = json.loads(message)  # desserializa a mensagem de volta para um dicionário
+    movements_received.append(movement_data)
     print(f"Movimento de {movement_data['name']}: {movement_data['direction']}, (x: {movement_data['x']}, y: {movement_data['y']})")
 
 # cliente MQTT para assinar (receber) movimentos
@@ -152,6 +158,25 @@ player_sub.loop_start()
 while game_running:
     wn.update()  
     move()  
+
+    # atualiza a posição dos jogadores na tela conforme os movimentos recebidos
+    while movements_received:
+        movement_data = movements_received.pop(0)  
+        name = movement_data['name']
+
+        # atualiza a posição do jogador ou adiciona um novo
+        if name not in players:
+            new_player = turtle.Turtle()
+            new_player.speed(0)
+            new_player.shape("circle")
+            new_player.color("blue")  # alterar escolha da cor mais tarde!!
+            new_player.penup()
+
+            players[name] = new_player  
+
+        players_online = players[name]
+        players_online.goto(movement_data['x'], movement_data['y'])
+
     time.sleep(delay_frames)
 
 # parar o loop mqtt e a thread de enviar movimentos após fechar o jogo
