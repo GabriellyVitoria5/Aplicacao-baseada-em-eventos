@@ -115,7 +115,7 @@ def send_movements():
         }
         movement_message = json.dumps(movement_data) 
         player_pub.publish("/game", movement_message)
-        time.sleep(0.1) 
+        time.sleep(0.05) 
 
 # cliente MQTT para publicar os movimentos
 player_pub = mqtt.Client(player_name)
