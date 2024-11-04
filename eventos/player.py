@@ -21,7 +21,7 @@ wn = turtle.Screen()
 wn.title("Move Game")
 wn.bgcolor("green")
 wn.setup(width=800, height=600)
-wn.tracer(0)  # Desativa as atualizações automáticas da tela
+wn.tracer(0)  # desativa as atualizações automáticas da tela
 
 # guardar altura e largura da tela para criar lógica da bolinha voltar pelo outro lado ao atingir a borda
 screen_width = wn.window_width() // 2  
@@ -100,7 +100,7 @@ wn.getcanvas().winfo_toplevel().protocol("WM_DELETE_WINDOW", close) # fechar jan
 def on_publish(client, userdata, result):
     pass
 
-# jogadores enviam seus movimentos uns para os outros
+# jogadores enviam seus movimentos uns para os outros via json
 def send_movements():
     global game_running
     while game_running:
@@ -110,7 +110,7 @@ def send_movements():
             "x": player_ball.xcor(),
             "y": player_ball.ycor()
         }
-        movement_message = json.dumps(movement_data)  # Serializa o dicionário para JSON
+        movement_message = json.dumps(movement_data) 
         player_pub.publish("/game", movement_message)
         time.sleep(0.1) 
 
@@ -136,14 +136,14 @@ def on_message(client, userdata, msg):
     message = msg.payload.decode()
     process_message(message)
 
-# armazenar movimentos recebidos de outros jogadores
-movements_received = []
-
-# processar mensagens recebidas por outros jogadores
+# processar movimentos recebidos por outros jogadores
 def process_message(message):
-    movement_data = json.loads(message)  # desserializa a mensagem de volta para um dicionário
+    movement_data = json.loads(message)  
     movements_received.append(movement_data)
     print(f"Movimento de {movement_data['name']}: {movement_data['direction']}, (x: {movement_data['x']}, y: {movement_data['y']})")
+
+# armazenar movimentos recebidos de outros jogadores
+movements_received = []
 
 # cliente MQTT para assinar (receber) movimentos
 player_sub = mqtt.Client()
@@ -154,7 +154,8 @@ player_sub.on_message = on_message
 # loop mqtt para receber movimentos dos jogadores
 player_sub.loop_start() 
 
-# loop principal com a tela do jogo
+
+# --- Loop principal com a tela do jogo ---
 while game_running:
     wn.update()  
     move()  
