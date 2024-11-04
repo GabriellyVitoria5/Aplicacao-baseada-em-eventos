@@ -12,6 +12,8 @@ port = 1883
 timelive = 60
 delay_frames = 0.01
 
+game_running = True # controle para parar o envio de movimentos
+
 # --- Parte gráfica (tela do jogo) ---
 
 # configurar a tela do jogo
@@ -25,7 +27,10 @@ wn.tracer(0)  # Desativa as atualizações automáticas da tela
 screen_width = wn.window_width() // 2  
 screen_height = wn.window_height() // 2 
 
-# jogador 1 (cada jogador terá sua própria bolinha por enquanto)
+# armazenar jogadores online
+players = {}
+
+# jogador 1 (cada jogador terá sua própria bolinha sozinha por enquanto)
 player_name = input("Informe seu nome: ")
 player_ball = turtle.Turtle()
 player_ball.speed(0)
@@ -49,6 +54,8 @@ def go_right():
     player_ball.direction = "right"
 
 def close():
+    global game_running
+    game_running = False
     wn.bye()
 
 def move():
@@ -82,6 +89,7 @@ wn.onkeypress(go_down, "s")
 wn.onkeypress(go_left, "a")
 wn.onkeypress(go_right, "d")
 wn.onkeypress(close, "Escape")
+wn.getcanvas().winfo_toplevel().protocol("WM_DELETE_WINDOW", close) # fechar janela clicando no X
 
 # --- Parte MQTT (publicação e assinatura de movimentos) ---
 
@@ -92,7 +100,8 @@ def on_publish(client, userdata, result):
 
 # jogadores enviam seus movimentos uns para os outros
 def send_movements():
-    while True:
+    global game_running
+    while game_running:
         movement_data = {
             "name": player_name,
             "direction": player_ball.direction,
@@ -109,8 +118,8 @@ player_pub.on_publish = on_publish
 player_pub.connect(broker, port)
 
 # thread separada para enviar movimentos
-movements_thread = threading.Thread(target=send_movements)
-movements_thread.start()
+send_movements_thread = threading.Thread(target=send_movements)
+send_movements_thread.start()
 
 
 # --- Métodos de sub (receber movimentos) --- 
@@ -123,8 +132,7 @@ def on_connect(client, userdata, flags, rc):
 # função chamada ao receber uma mensagem com movimento dos jogadores
 def on_message(client, userdata, msg):
     message = msg.payload.decode()
-    thread = threading.Thread(target=process_message, args=(message,))
-    thread.start()
+    process_message(message)
 
 # processar mensagens recebidas por outros jogadores
 def process_message(message):
@@ -141,7 +149,11 @@ player_sub.on_message = on_message
 player_sub.loop_start() 
 
 # loop principal com a tela do jogo
-while True:
+while game_running:
     wn.update()  
     move()  
     time.sleep(delay_frames)
+
+# parar o loop mqtt e a thread de enviar movimentos após fechar o jogo
+player_sub.loop_stop()
+send_movements_thread.join()
