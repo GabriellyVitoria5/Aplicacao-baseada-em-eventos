@@ -40,6 +40,9 @@ player_ball.penup()
 player_ball.goto(0, 0)
 player_ball.direction = "stop"
 
+# armazenar jogador atual
+players[player_name] = player_ball
+
 # funções de direção e movimentação
 def go_up():
     player_ball.direction = "up"
@@ -166,7 +169,7 @@ while game_running:
         name = movement_data['name']
 
         # atualiza a posição do jogador ou adiciona um novo
-        if name not in players:
+        if (name not in players) and (name is not player_name):
             new_player = turtle.Turtle()
             new_player.speed(0)
             new_player.shape("circle")
