@@ -15,6 +15,16 @@ This project is part of an activity for the Distributed Systems course. It's a s
   - `paho-mqtt`
   - `turtle`
 
+## Installation
+
+```bash
+pip install paho-mqqt
+sudo apt-get install python3-paho-mqtt
+sudo apt-get install python3-tk
+```
+
+## Getting started
+
 To test the game, run the following command in a terminal:
 
 ```bash
