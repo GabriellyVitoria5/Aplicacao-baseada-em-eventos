@@ -25,7 +25,12 @@ sudo apt-get install python3-tk
 
 ## Getting started
 
-To test the game, run the following command in a terminal:
+First, start the MQTT Server: 
+
+```bash
+docker compose up -d
+
+To test the game, run the following command:
 
 ```bash
 python3 player.py
