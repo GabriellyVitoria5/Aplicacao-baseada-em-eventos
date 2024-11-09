@@ -29,6 +29,7 @@ First, start the MQTT Server:
 
 ```bash
 docker compose up -d
+```
 
 To test the game, run the following command:
 
